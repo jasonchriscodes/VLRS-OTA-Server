@@ -62,17 +62,13 @@ def upload_apk():
         if os.path.isfile(file_path_to_remove):
             os.unlink(file_path_to_remove)
 
-    # Verify the file was saved correctly and has content
-    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-        # Copy the file to the latest directory as app-debug.apk
-        latest_apk_path = os.path.join(latest_dir, 'app-debug.apk')
-        shutil.copyfile(file_path, latest_apk_path)
-    else:
-        print(f"Error: The file {file_path} was not saved correctly and cannot be copied.")
+    # Copy the uploaded APK to the latest directory
+    latest_apk_path = os.path.join(latest_dir, versioned_filename)
+    shutil.copyfile(file_path, latest_apk_path)
 
     # Update the version information
     version_info['version'] = version
-    version_info['url'] = f"http://43.226.218.98/apk/{versioned_filename}"
+    version_info['url'] = f"http://43.226.218.98/apk/latest/{versioned_filename}"
     version_info['release_notes'] = request.form.get('release_notes', 'No release notes provided')
 
     return jsonify({"message": "APK uploaded and version information updated successfully"}), 200
