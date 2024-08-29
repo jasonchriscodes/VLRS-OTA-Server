@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory
 import os
 import shutil
 
+# Initialize the Flask application
 app = Flask(__name__, static_url_path='/apk', static_folder='/var/www/ota_update_server/apk')
 
 # Default version info
@@ -11,6 +12,7 @@ version_info = {
     "release_notes": "Initial release."
 }
 
+# Define your routes below
 @app.route('/api/latest-version', methods=['GET'])
 def get_latest_version():
     """Endpoint to get the latest version information."""
