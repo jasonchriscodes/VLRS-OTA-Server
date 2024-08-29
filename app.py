@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify, send_from_directory
 import os
-import shutil
 
 app = Flask(__name__, static_url_path='/apk', static_folder='/var/www/ota_update_server/apk')
 
@@ -49,31 +48,16 @@ def upload_apk():
     file_path = os.path.join(app.static_folder, versioned_filename)
     file.save(file_path)
 
-    # Ensure the latest directory exists
-    latest_dir = os.path.join(app.static_folder, 'latest')
-    if not os.path.exists(latest_dir):
-        os.makedirs(latest_dir)
-
-    # Clean the latest directory (delete all existing files)
-    for f in os.listdir(latest_dir):
-        file_path_to_remove = os.path.join(latest_dir, f)
-        if os.path.isfile(file_path_to_remove):
-            os.unlink(file_path_to_remove)
-
     # Verify the file was saved correctly and has content
     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-        # Copy the file to the latest directory as app-debug.apk
-        latest_apk_path = os.path.join(latest_dir, 'app-debug.apk')
-        shutil.copyfile(file_path, latest_apk_path)
+        # Update the version information
+        version_info['version'] = version
+        version_info['url'] = f"http://43.226.218.98/apk/{versioned_filename}"
+        version_info['release_notes'] = request.form.get('release_notes', 'No release notes provided')
+
+        return jsonify({"message": "APK uploaded and version information updated successfully"}), 200
     else:
-        print(f"Error: The file {file_path} was not saved correctly and cannot be copied.")
-
-    # Update the version information
-    version_info['version'] = version
-    version_info['url'] = f"http://43.226.218.98/apk/{versioned_filename}"
-    version_info['release_notes'] = request.form.get('release_notes', 'No release notes provided')
-
-    return jsonify({"message": "APK uploaded and version information updated successfully"}), 200
+        return jsonify({"error": "Failed to save the file correctly"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
