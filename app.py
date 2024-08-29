@@ -12,7 +12,6 @@ version_info = {
     "release_notes": "Initial release."
 }
 
-# Define your routes below
 @app.route('/api/latest-version', methods=['GET'])
 def get_latest_version():
     """Endpoint to get the latest version information."""
@@ -45,7 +44,6 @@ def upload_apk():
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
-    # Save the new APK with a versioned filename
     version = request.form['version']
     versioned_filename = f"app-v{version}.apk"
     file_path = os.path.join(app.static_folder, versioned_filename)
@@ -62,7 +60,7 @@ def upload_apk():
         if os.path.isfile(file_path_to_remove):
             os.unlink(file_path_to_remove)
 
-    # Copy the uploaded APK to the latest directory
+    # Save the uploaded APK to the latest directory with the versioned filename
     latest_apk_path = os.path.join(latest_dir, versioned_filename)
     shutil.copyfile(file_path, latest_apk_path)
 
