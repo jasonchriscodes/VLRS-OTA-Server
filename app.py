@@ -1,16 +1,43 @@
 from flask import Flask, request, jsonify, send_from_directory
 import os
 import shutil
+import json
 
 # Initialize the Flask application
 app = Flask(__name__, static_url_path='/apk', static_folder='/var/www/ota_update_server/apk')
 
-# Default version info
-version_info = {
-    "version": "1.0.0",
-    "url": "http://43.226.218.98/apk/app-v1.0.0.apk",
-    "release_notes": "Initial release."
-}
+# Path to the file where version info will be saved
+version_info_file = '/var/www/ota_update_server/version_info.json'
+
+# Function to get the latest APK version from the /latest directory
+def get_latest_apk_version():
+    latest_dir = os.path.join(app.static_folder, 'latest')
+    if os.path.exists(latest_dir) and os.listdir(latest_dir):
+        apk_files = [f for f in os.listdir(latest_dir) if os.path.isfile(os.path.join(latest_dir, f))]
+        if apk_files:
+            latest_apk = apk_files[0]  # Assuming only one APK file exists in the latest directory
+            version = latest_apk.split('-v')[-1].split('.apk')[0]  # Extract version from filename
+            return version, latest_apk
+    return None, None
+
+# Load version info from file if it exists, otherwise use the latest APK
+if os.path.exists(version_info_file):
+    with open(version_info_file, 'r') as f:
+        version_info = json.load(f)
+else:
+    latest_version, latest_apk_name = get_latest_apk_version()
+    if latest_version:
+        version_info = {
+            "version": latest_version,
+            "url": f"http://43.226.218.98/apk/latest/{latest_apk_name}",
+            "release_notes": "Auto detected version on server start."
+        }
+    else:
+        version_info = {
+            "version": "1.0.0",
+            "url": "http://43.226.218.98/apk/app-v1.0.0.apk",
+            "release_notes": "Initial release."
+        }
 
 @app.route('/api/latest-version', methods=['GET'])
 def get_latest_version():
@@ -27,6 +54,10 @@ def update_version():
     version_info['version'] = data['version']
     version_info['url'] = data['url']
     version_info['release_notes'] = data['release_notes']
+
+    # Save the updated version info to the file
+    with open(version_info_file, 'w') as f:
+        json.dump(version_info, f)
 
     return jsonify({"message": "Version information updated successfully"}), 200
 
@@ -68,6 +99,10 @@ def upload_apk():
     version_info['version'] = version
     version_info['url'] = f"http://43.226.218.98/apk/latest/{versioned_filename}"
     version_info['release_notes'] = request.form.get('release_notes', 'No release notes provided')
+
+    # Save the updated version info to the file
+    with open(version_info_file, 'w') as f:
+        json.dump(version_info, f)
 
     return jsonify({"message": "APK uploaded and version information updated successfully"}), 200
 
