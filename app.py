@@ -145,16 +145,19 @@ def download_latest_apk():
     latest_version, latest_apk_name = get_latest_apk_version()
     if latest_apk_name:
         try:
+            directory_path = os.path.join(app.static_folder, 'latest')
+            print(f"Attempting to serve file {latest_apk_name} from directory {directory_path}")
             return send_from_directory(
-                directory=os.path.join(app.static_folder, 'latest'),
+                directory=directory_path,
                 filename=latest_apk_name,
                 as_attachment=True
             )
         except Exception as e:
+            print(f"Error while serving the file: {e}")
             return jsonify({"error": f"Failed to download the APK: {str(e)}"}), 500
     else:
+        print("No APK found in the latest directory")
         return jsonify({"error": "No APK found in the latest directory"}), 404
-
 
 @app.route('/api/upload-apk', methods=['POST'])
 def upload_apk():
