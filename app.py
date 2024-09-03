@@ -72,6 +72,36 @@ def update_version():
 
     return jsonify({"message": "Version information updated successfully"}), 200
 
+# Function to get the current APK version from the /current directory
+def get_current_apk_version():
+    current_dir = os.path.join(app.static_folder, 'current')
+    if os.path.exists(current_dir) and os.listdir(current_dir):
+        apk_files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f))]
+        if apk_files:
+            current_apk = apk_files[0]  # Assuming only one APK file exists in the current directory
+            version = current_apk.split('-v')[-1].split('.apk')[0]  # Extract version from filename
+            return version, current_apk
+    return None, None
+
+# New API endpoint to get the current version information
+@app.route('/api/current-version', methods=['GET'])
+def get_current_version():
+    """Endpoint to get the current version information."""
+    current_version, current_apk_name = get_current_apk_version()
+    if current_version:
+        current_version_info = {
+            "version": current_version,
+            "url": f"http://43.226.218.98/apk/current/{current_apk_name}",
+            "release_notes": "Auto detected current version."
+        }
+    else:
+        current_version_info = {
+            "version": "1.0.0",
+            "url": "http://43.226.218.98/apk/current/app-v1.0.0.apk",
+            "release_notes": "Initial release."
+        }
+    return jsonify(current_version_info)
+
 @app.route('/apk/<path:filename>', methods=['GET'])
 def download_apk(filename):
     """Endpoint to download an APK file."""
