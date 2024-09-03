@@ -53,7 +53,11 @@ version_info = update_version_info()
 @app.route('/api/latest-version', methods=['GET'])
 def get_latest_version():
     """Endpoint to get the latest version information."""
-    return jsonify(version_info)
+    if version_info:
+        return jsonify(version_info)
+    else:
+        return jsonify({"error": "No version information available"}), 404
+
 
 @app.route('/api/update-version', methods=['POST'])
 def update_version():
