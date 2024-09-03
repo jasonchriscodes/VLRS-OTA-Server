@@ -102,6 +102,32 @@ def get_current_version():
         }
     return jsonify(current_version_info)
 
+@app.route('/api/update-current-folder', methods=['POST'])
+def update_current_folder():
+    """
+    Endpoint to update the 'current' folder with the contents of the 'latest' folder.
+    """
+    current_dir = os.path.join(app.static_folder, 'current')
+    latest_dir = os.path.join(app.static_folder, 'latest')
+
+    # Clean the current directory (delete all existing files)
+    if os.path.exists(current_dir):
+        for f in os.listdir(current_dir):
+            file_path_to_remove = os.path.join(current_dir, f)
+            if os.path.isfile(file_path_to_remove):
+                os.unlink(file_path_to_remove)
+    else:
+        os.makedirs(current_dir)
+
+    # Copy the contents of the latest directory to the current directory
+    for f in os.listdir(latest_dir):
+        latest_file_path = os.path.join(latest_dir, f)
+        current_file_path = os.path.join(current_dir, f)
+        if os.path.isfile(latest_file_path):
+            shutil.copyfile(latest_file_path, current_file_path)
+
+    return jsonify({"message": "Current folder updated successfully"}), 200
+
 @app.route('/apk/<path:filename>', methods=['GET'])
 def download_apk(filename):
     """Endpoint to download an APK file."""
