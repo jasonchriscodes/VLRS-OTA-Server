@@ -133,6 +133,25 @@ def download_apk(filename):
     """Endpoint to download an APK file."""
     return send_from_directory('/var/www/ota_update_server/apk', filename)
 
+@app.route('/api/download-latest-apk', methods=['GET'])
+def download_latest_apk():
+    """
+    Endpoint to download the latest APK file from the /latest directory.
+    """
+    latest_version, latest_apk_name = get_latest_apk_version()
+    if latest_apk_name:
+        try:
+            return send_from_directory(
+                directory=os.path.join(app.static_folder, 'latest'),
+                filename=latest_apk_name,
+                as_attachment=True
+            )
+        except Exception as e:
+            return jsonify({"error": f"Failed to download the APK: {str(e)}"}), 500
+    else:
+        return jsonify({"error": "No APK found in the latest directory"}), 404
+
+
 @app.route('/api/upload-apk', methods=['POST'])
 def upload_apk():
     """Endpoint to upload a new APK and update the latest version."""
