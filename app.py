@@ -50,6 +50,11 @@ def get_latest_version():
     else:
         return jsonify({"error": "No version information available"}), 404
     
+@app.route('/apk/<path:filename>', methods=['GET'])
+def download_apk(filename):
+    """Endpoint to download an APK file."""
+    return send_from_directory('/var/www/ota_update_server/apk', filename)
+    
 @app.route('/api/download-latest-apk', methods=['GET'])
 def download_latest_apk():
     latest_version, latest_apk_name = get_latest_apk_version()
@@ -149,6 +154,17 @@ def upload_apk():
         json.dump(version_info, f)
 
     return jsonify({"message": "APK uploaded and version information updated successfully"}), 200
+
+@app.route('/api/test-download', methods=['GET'])
+def test_download():
+    try:
+        return send_from_directory(
+            directory='/var/www/ota_update_server/apk/latest',
+            filename='app-v1.0.11.apk',
+            as_attachment=True
+        )
+    except Exception as e:
+        return jsonify({"error": f"Test download failed: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
