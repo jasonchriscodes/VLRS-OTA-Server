@@ -49,6 +49,21 @@ def get_latest_version():
         return jsonify(version_info)
     else:
         return jsonify({"error": "No version information available"}), 404
+    
+@app.route('/api/download-latest-apk', methods=['GET'])
+def download_latest_apk():
+    latest_version, latest_apk_name = get_latest_apk_version()
+    if latest_apk_name:
+        try:
+            directory_path = os.path.join(app.static_folder, 'latest')
+            response = send_from_directory(directory_path, latest_apk_name, as_attachment=True)
+            response.headers["Content-Disposition"] = f"attachment; filename={latest_apk_name}"
+            return response
+        except Exception as e:
+            return jsonify({"error": f"Error while serving the file: {str(e)}"}), 500
+    else:
+        return jsonify({"error": "No APK found in the latest directory"}), 404
+
 
 @app.route('/api/current-version/<aid>', methods=['GET'])
 def get_current_version_for_aid(aid):
