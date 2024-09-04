@@ -77,7 +77,7 @@ def download_latest_apk():
 
 @app.route('/api/current-version/<aid>', methods=['GET'])
 def get_current_version_for_aid(aid):
-    """Endpoint to get the current version information for a specific aid."""
+    """Endpoint to get the current version information for a specific aid (Android ID)."""
     current_dir = os.path.join(app.static_folder, 'current', aid)
     if os.path.exists(current_dir) and os.listdir(current_dir):
         apk_files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f))]
