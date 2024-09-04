@@ -139,25 +139,39 @@ def download_apk(filename):
 
 @app.route('/api/download-latest-apk', methods=['GET'])
 def download_latest_apk():
-    """
-    Endpoint to download the latest APK file from the /latest directory.
-    """
     latest_version, latest_apk_name = get_latest_apk_version()
     if latest_apk_name:
         try:
             directory_path = os.path.join(app.static_folder, 'latest')
-            print(f"Attempting to serve file {latest_apk_name} from directory {directory_path}")
-            return send_from_directory(
-                directory=directory_path,
-                filename=latest_apk_name,
+            print(f"Serving file: {latest_apk_name}")
+            print(f"Directory path: {directory_path}")
+
+            response = send_from_directory(
+                directory_path,  # The directory where the APK is stored
+                latest_apk_name,  # The dynamically determined filename
                 as_attachment=True
             )
+            # Explicitly set the filename in the Content-Disposition header
+            response.headers["Content-Disposition"] = f"attachment; filename={latest_apk_name}"
+            return response
         except Exception as e:
-            print(f"Error while serving the file: {e}")
-            return jsonify({"error": f"Failed to download the APK: {str(e)}"}), 500
+            error_message = f"Error while serving the file: {str(e)}"
+            print(error_message)
+            return jsonify({"error": error_message}), 500
     else:
         print("No APK found in the latest directory")
         return jsonify({"error": "No APK found in the latest directory"}), 404
+    
+@app.route('/api/test-download', methods=['GET'])
+def test_download():
+    try:
+        return send_from_directory(
+            directory='/var/www/ota_update_server/apk/latest',
+            filename='app-v1.0.11.apk',
+            as_attachment=True
+        )
+    except Exception as e:
+        return jsonify({"error": f"Test download failed: {str(e)}"}), 500
 
 @app.route('/api/upload-apk', methods=['POST'])
 def upload_apk():
