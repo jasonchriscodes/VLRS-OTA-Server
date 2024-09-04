@@ -110,7 +110,45 @@ def update_current_folder_for_aid(aid):
 
     return jsonify({"message": f"Current folder updated successfully for aid: {aid}"}), 200
 
-# Other existing routes remain unchanged...
+@app.route('/api/upload-apk', methods=['POST'])
+def upload_apk():
+    """Endpoint to upload a new APK and update the latest version."""
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    version = request.form['version']
+    versioned_filename = f"app-v{version}.apk"
+    file_path = os.path.join(app.static_folder, versioned_filename)
+    file.save(file_path)
+
+    # Ensure the latest directory exists
+    latest_dir = os.path.join(app.static_folder, 'latest')
+    if not os.path.exists(latest_dir):
+        os.makedirs(latest_dir)
+
+    # Clean the latest directory (delete all existing files)
+    for f in os.listdir(latest_dir):
+        file_path_to_remove = os.path.join(latest_dir, f)
+        if os.path.isfile(file_path_to_remove):
+            os.unlink(file_path_to_remove)
+
+    # Save the uploaded APK to the latest directory with the versioned filename
+    latest_apk_path = os.path.join(latest_dir, versioned_filename)
+    shutil.copyfile(file_path, latest_apk_path)
+
+    # Update the version information
+    version_info['version'] = version
+    version_info['url'] = f"http://43.226.218.98/apk/latest/{versioned_filename}"
+    version_info['release_notes'] = request.form.get('release_notes', 'No release notes provided')
+
+    # Save the updated version info to the file
+    with open(version_info_file, 'w') as f:
+        json.dump(version_info, f)
+
+    return jsonify({"message": "APK uploaded and version information updated successfully"}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
