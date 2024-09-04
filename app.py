@@ -5,19 +5,22 @@ import json
 
 app = Flask(__name__, static_url_path='/apk', static_folder='/var/www/ota_update_server/apk')
 
+# Path to the version info file
 version_info_file = '/var/www/ota_update_server/version_info.json'
 
 def get_latest_apk_version():
+    """Function to retrieve the latest APK version from the 'latest' directory."""
     latest_dir = os.path.join(app.static_folder, 'latest')
     if os.path.exists(latest_dir) and os.listdir(latest_dir):
         apk_files = [f for f in os.listdir(latest_dir) if os.path.isfile(os.path.join(latest_dir, f))]
         if apk_files:
             latest_apk = apk_files[0]
-            version = latest_apk.split('-v')[-1].split('.apk')[0]
+            version = latest_apk.split('-v')[-1].split('.apk')[0]  # Extract version from filename
             return version, latest_apk
     return None, None
 
 def update_version_info():
+    """Update the version info by detecting the latest APK on the server."""
     latest_version, latest_apk_name = get_latest_apk_version()
     if latest_version:
         version_info = {
@@ -41,22 +44,25 @@ def update_version_info():
                 json.dump(version_info, f)
     return version_info
 
+# Ensure version info is updated on server startup
 version_info = update_version_info()
 
 @app.route('/api/latest-version', methods=['GET'])
 def get_latest_version():
+    """Endpoint to get the latest version information."""
     if version_info:
         return jsonify(version_info)
     else:
         return jsonify({"error": "No version information available"}), 404
-    
+
 @app.route('/apk/<path:filename>', methods=['GET'])
 def download_apk(filename):
     """Endpoint to download an APK file."""
     return send_from_directory('/var/www/ota_update_server/apk', filename)
-    
+
 @app.route('/api/download-latest-apk', methods=['GET'])
 def download_latest_apk():
+    """Endpoint to download the latest APK from the 'latest' directory."""
     latest_version, latest_apk_name = get_latest_apk_version()
     if latest_apk_name:
         try:
@@ -68,7 +74,6 @@ def download_latest_apk():
             return jsonify({"error": f"Error while serving the file: {str(e)}"}), 500
     else:
         return jsonify({"error": "No APK found in the latest directory"}), 404
-
 
 @app.route('/api/current-version/<aid>', methods=['GET'])
 def get_current_version_for_aid(aid):
@@ -154,17 +159,6 @@ def upload_apk():
         json.dump(version_info, f)
 
     return jsonify({"message": "APK uploaded and version information updated successfully"}), 200
-
-@app.route('/api/test-download', methods=['GET'])
-def test_download():
-    try:
-        return send_from_directory(
-            directory='/var/www/ota_update_server/apk/latest',
-            filename='app-v1.0.11.apk',
-            as_attachment=True
-        )
-    except Exception as e:
-        return jsonify({"error": f"Test download failed: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
