@@ -77,11 +77,12 @@ def download_latest_apk():
 
 @app.route('/api/current-version/<aid>', methods=['GET'])
 def get_current_version_for_aid(aid):
-    """Endpoint to get the current version information for a specific aid (Android ID)."""
+    """Endpoint to get the current version information for a specific aid."""
     current_dir = os.path.join(app.static_folder, 'current', aid)
     if os.path.exists(current_dir) and os.listdir(current_dir):
         apk_files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f))]
         if apk_files:
+            # Get the APK name and dynamically extract the version
             current_apk = apk_files[0]
             version = current_apk.split('-v')[-1].split('.apk')[0]
             current_version_info = {
@@ -90,6 +91,7 @@ def get_current_version_for_aid(aid):
                 "release_notes": "Auto detected current version for the device."
             }
             return jsonify(current_version_info)
+    # Fallback to version 1.0.0 if no APK is found
     return jsonify({
         "version": "1.0.0",
         "url": f"http://43.226.218.98/apk/current/{aid}/app-v1.0.0.apk",
