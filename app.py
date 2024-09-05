@@ -2,11 +2,15 @@ from flask import Flask, request, jsonify, send_from_directory
 import os
 import shutil
 import json
+import logging
 
 app = Flask(__name__, static_url_path='/apk', static_folder='/var/www/ota_update_server/apk')
 
 # Path to the version info file
 version_info_file = '/var/www/ota_update_server/version_info.json'
+
+# Set up logging to a file
+logging.basicConfig(filename='/var/log/flask_app.log', level=logging.DEBUG)
 
 def get_latest_apk_version():
     """Function to retrieve the latest APK version from the 'latest' directory."""
@@ -79,24 +83,46 @@ def download_latest_apk():
 def get_current_version_for_aid(aid):
     """Endpoint to get the current version information for a specific aid."""
     current_dir = os.path.join(app.static_folder, 'current', aid)
-    if os.path.exists(current_dir) and os.listdir(current_dir):
+    
+    # Log the path being checked
+    print(f"Checking for APK in directory: {current_dir}")
+
+    # Check if the 'current' directory exists and has files
+    if os.path.exists(current_dir):
+        print(f"Directory exists: {current_dir}")
         apk_files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f))]
+
+        # Log the found APK files
+        print(f"APK files found: {apk_files}")
+
+        # Ensure at least one APK is available in the current directory
         if apk_files:
-            # Get the APK name and dynamically extract the version
-            current_apk = apk_files[0]
-            version = current_apk.split('-v')[-1].split('.apk')[0]
+            current_apk = apk_files[0]  # Assuming only one APK per device; can be modified if needed
+            version = current_apk.split('-v')[-1].split('.apk')[0]  # Extract version from APK filename
+            
+            # Log the detected version
+            print(f"Detected APK: {current_apk}, Version: {version}")
+            
+            # Return version information for the specific 'aid'
             current_version_info = {
                 "version": version,
                 "url": f"http://43.226.218.98/apk/current/{aid}/{current_apk}",
                 "release_notes": "Auto detected current version for the device."
             }
             return jsonify(current_version_info)
-    # Fallback to version 1.0.0 if no APK is found
-    return jsonify({
-        "version": "1.0.0",
-        "url": f"http://43.226.218.98/apk/current/{aid}/app-v1.0.0.apk",
-        "release_notes": "Initial release for the device."
-    })
+        else:
+            print(f"No APK found in directory: {current_dir}")
+            return jsonify({"error": "No APK found for the current device."}), 404
+    else:
+        # Log when directory doesn't exist
+        print(f"Directory not found: {current_dir}")
+        # Return error if the directory does not exist or no APK is found
+        return jsonify({
+            "error": f"No version information available for device: {aid}. Please upload the appropriate APK.",
+            "version": None,
+            "release_notes": "No APK found for this device."
+        }), 404
+
 
 @app.route('/api/update-current-folder/<aid>', methods=['POST'])
 def update_current_folder_for_aid(aid):
@@ -163,4 +189,5 @@ def upload_apk():
     return jsonify({"message": "APK uploaded and version information updated successfully"}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
