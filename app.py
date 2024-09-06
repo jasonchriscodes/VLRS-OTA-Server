@@ -3,14 +3,26 @@ import os
 import shutil
 import json
 import logging
+from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__, static_url_path='/apk', static_folder='/var/www/ota_update_server/apk')
 
 # Path to the version info file
 version_info_file = '/var/www/ota_update_server/version_info.json'
 
-# Set up logging to a file
-logging.basicConfig(filename='/var/log/flask_app.log', level=logging.DEBUG)
+# Configure logging
+log_directory = '/var/log/flask_app'
+os.makedirs(log_directory, exist_ok=True)  # Ensure the log directory exists
+
+log_file = os.path.join(log_directory, 'app.log')
+handler = RotatingFileHandler(log_file, maxBytes=100000, backupCount=3)
+formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
+handler.setFormatter(formatter)
+handler.setLevel(logging.DEBUG)
+
+# Add handler to Flask's logger
+app.logger.addHandler(handler)
+app.logger.setLevel(logging.DEBUG)
 
 def get_latest_apk_version():
     """Function to retrieve the latest APK version from the 'latest' directory."""
