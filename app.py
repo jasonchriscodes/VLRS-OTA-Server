@@ -95,12 +95,13 @@ def download_latest_apk():
 def get_current_version_for_aid(aid):
     """Endpoint to get the current version information for a specific aid."""
     current_dir = os.path.join(app.static_folder, 'current', aid)
-    
+    latest_dir = os.path.join(app.static_folder, 'latest')
+
     # Log the path being checked
     print(f"Checking for APK in directory: {current_dir}")
 
     # Check if the 'current' directory exists and has files
-    if os.path.exists(current_dir):
+    if os.path.exists(current_dir) and os.listdir(current_dir):
         print(f"Directory exists: {current_dir}")
         apk_files = [f for f in os.listdir(current_dir) if os.path.isfile(os.path.join(current_dir, f))]
 
@@ -109,7 +110,7 @@ def get_current_version_for_aid(aid):
 
         # Ensure at least one APK is available in the current directory
         if apk_files:
-            current_apk = apk_files[0]  # Assuming only one APK per device; can be modified if needed
+            current_apk = apk_files[0]  # Assuming only one APK per device
             version = current_apk.split('-v')[-1].split('.apk')[0]  # Extract version from APK filename
             
             # Log the detected version
@@ -126,15 +127,32 @@ def get_current_version_for_aid(aid):
             print(f"No APK found in directory: {current_dir}")
             return jsonify({"error": "No APK found for the current device."}), 404
     else:
-        # Log when directory doesn't exist
-        print(f"Directory not found: {current_dir}")
-        # Return error if the directory does not exist or no APK is found
-        return jsonify({
-            "error": f"No version information available for device: {aid}. Please upload the appropriate APK.",
-            "version": None,
-            "release_notes": "No APK found for this device."
-        }), 404
+        # If directory does not exist, create it and copy APK from latest
+        print(f"Directory not found: {current_dir}. Creating new directory and copying latest APK.")
 
+        # Create the current aid directory
+        os.makedirs(current_dir, exist_ok=True)
+
+        # Copy the APK from the 'latest' directory
+        latest_apk_files = [f for f in os.listdir(latest_dir) if os.path.isfile(os.path.join(latest_dir, f))]
+        if latest_apk_files:
+            latest_apk = latest_apk_files[0]  # Assume there's only one latest APK in 'latest'
+            shutil.copyfile(os.path.join(latest_dir, latest_apk), os.path.join(current_dir, latest_apk))
+            
+            # Extract the version from the copied APK
+            version = latest_apk.split('-v')[-1].split('.apk')[0]
+            
+            # Log the action and return the version information
+            print(f"Copied {latest_apk} to {current_dir}. Detected version: {version}")
+            current_version_info = {
+                "version": version,
+                "url": f"http://43.226.218.98/apk/current/{aid}/{latest_apk}",
+                "release_notes": "Auto detected current version for the device."
+            }
+            return jsonify(current_version_info)
+        else:
+            print(f"No APK found in latest directory.")
+            return jsonify({"error": "No APK found to copy."}), 404
 
 @app.route('/api/update-current-folder/<aid>', methods=['POST'])
 def update_current_folder_for_aid(aid):
