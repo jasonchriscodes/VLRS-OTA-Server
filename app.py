@@ -91,10 +91,10 @@ def download_latest_apk():
     else:
         return jsonify({"error": "No APK found in the latest directory"}), 404
 
-@app.route('/api/current-version/<imei>', methods=['GET'])
-def get_current_version_for_imei(imei):
-    """Endpoint to get the current version information for a specific IMEI."""
-    current_dir = os.path.join(app.static_folder, 'current', imei)
+@app.route('/api/current-version/<aid>', methods=['GET'])
+def get_current_version_for_aid(aid):
+    """Endpoint to get the current version information for a specific AID."""
+    current_dir = os.path.join(app.static_folder, 'current', aid)
     latest_dir = os.path.join(app.static_folder, 'latest')
 
     # Log the path being checked
@@ -116,10 +116,10 @@ def get_current_version_for_imei(imei):
             # Log the detected version
             print(f"Detected APK: {current_apk}, Version: {version}")
             
-            # Return version information for the specific 'imei'
+            # Return version information for the specific 'aid'
             current_version_info = {
                 "version": version,
-                "url": f"http://43.226.218.98/apk/current/{imei}/{current_apk}",
+                "url": f"http://43.226.218.98/apk/current/{aid}/{current_apk}",
                 "release_notes": "Auto detected current version for the device."
             }
             return jsonify(current_version_info)
@@ -130,7 +130,7 @@ def get_current_version_for_imei(imei):
         # If directory does not exist, create it and copy APK from latest
         print(f"Directory not found: {current_dir}. Creating new directory and copying latest APK.")
 
-        # Create the current imei directory
+        # Create the current aid directory
         os.makedirs(current_dir, exist_ok=True)
 
         # Copy the APK from the 'latest' directory
@@ -146,7 +146,7 @@ def get_current_version_for_imei(imei):
             print(f"Copied {latest_apk} to {current_dir}. Detected version: {version}")
             current_version_info = {
                 "version": version,
-                "url": f"http://43.226.218.98/apk/current/{imei}/{latest_apk}",
+                "url": f"http://43.226.218.98/apk/current/{aid}/{latest_apk}",
                 "release_notes": "Auto detected current version for the device."
             }
             return jsonify(current_version_info)
@@ -154,10 +154,10 @@ def get_current_version_for_imei(imei):
             print(f"No APK found in latest directory.")
             return jsonify({"error": "No APK found to copy."}), 404
 
-@app.route('/api/update-current-folder/<imei>', methods=['POST'])
-def update_current_folder_for_imei(imei):
-    """Endpoint to update the 'current' folder for a specific IMEI with the contents of the 'latest' folder."""
-    current_dir = os.path.join(app.static_folder, 'current', imei)
+@app.route('/api/update-current-folder/<aid>', methods=['POST'])
+def update_current_folder_for_aid(aid):
+    """Endpoint to update the 'current' folder for a specific aid with the contents of the 'latest' folder."""
+    current_dir = os.path.join(app.static_folder, 'current', aid)
     latest_dir = os.path.join(app.static_folder, 'latest')
 
     # Clean the current directory (delete all existing files)
@@ -169,14 +169,14 @@ def update_current_folder_for_imei(imei):
     else:
         os.makedirs(current_dir)
 
-    # Copy the contents of the latest directory to the current directory for this specific IMEI
+    # Copy the contents of the latest directory to the current directory for this specific aid
     for f in os.listdir(latest_dir):
         latest_file_path = os.path.join(latest_dir, f)
         current_file_path = os.path.join(current_dir, f)
         if os.path.isfile(latest_file_path):
             shutil.copyfile(latest_file_path, current_file_path)
 
-    return jsonify({"message": f"Current folder updated successfully for IMEI: {imei}"}), 200
+    return jsonify({"message": f"Current folder updated successfully for aid: {aid}"}), 200
 
 @app.route('/api/upload-apk', methods=['POST'])
 def upload_apk():
