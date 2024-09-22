@@ -218,5 +218,44 @@ def upload_apk():
 
     return jsonify({"message": "APK uploaded and version information updated successfully"}), 200
 
+@app.route('/api/upload-config', methods=['POST'])
+def upload_config():
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+
+        # Extract required fields
+        company_name = data.get("companyName")
+        password = data.get("password")
+        token_config_data = data.get("tokenConfigData")
+        bus_config = data.get("busConfig")
+
+        # Verify all required fields are present
+        if not all([company_name, password, token_config_data, bus_config]):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        # Prepare the directory and file path
+        config_dir = "/var/www/ota_update_server/config"
+        os.makedirs(config_dir, exist_ok=True)
+
+        config_file_path = os.path.join(config_dir, f"{token_config_data}.json")
+
+        # Save data to JSON file
+        with open(config_file_path, "w") as config_file:
+            json.dump({
+                "companyName": company_name,
+                "password": password,
+                "tokenConfigData": token_config_data,
+                "busConfig": bus_config
+            }, config_file, indent=4)
+
+        return jsonify({"message": "Config file uploaded successfully"}), 200
+
+    except Exception as e:
+        app.logger.error(f"Error uploading config: {e}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
