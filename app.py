@@ -257,5 +257,20 @@ def upload_config():
         app.logger.error(f"Error uploading config: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/config-files', methods=['GET'])
+def get_config_files():
+    """Endpoint to get all config files from the config folder"""
+    config_folder = '/var/www/ota_update_server/config'
+    config_files = []
+
+    for filename in os.listdir(config_folder):
+        if filename.endswith('.json'):
+            with open(os.path.join(config_folder, filename), 'r') as file:
+                config_data = json.load(file)
+                config_files.append(config_data)
+
+    return jsonify(config_files), 200
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
