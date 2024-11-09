@@ -271,6 +271,24 @@ def get_config_files():
 
     return jsonify(config_files), 200
 
+@app.route('/api/download-route-generation-apk', methods=['GET'])
+def download_route_generation_apk():
+    """Endpoint to download the route-generation-release APK from the 'route-generation' folder."""
+    apk_directory = '/var/www/ota_update_server/route-generation'
+    apk_filename = 'route-generation-release.apk'
+    
+    if os.path.exists(os.path.join(apk_directory, apk_filename)):
+        try:
+            response = send_from_directory(apk_directory, apk_filename, as_attachment=True)
+            response.headers["Content-Disposition"] = f"attachment; filename={apk_filename}"
+            return response
+        except Exception as e:
+            app.logger.error(f"Error while serving the route-generation APK: {str(e)}")
+            return jsonify({"error": f"Error while serving the file: {str(e)}"}), 500
+    else:
+        app.logger.error("route-generation-release APK not found.")
+        return jsonify({"error": "route-generation-release APK not found"}), 404
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
