@@ -1,0 +1,27 @@
+{
+    "companyName": "vlrs",
+    "password": "vlrs1234",
+    "tokenConfigData": "sm9TTAJ8vDn8x7d1NxrD",
+    "busConfig": [
+        {
+            "aid": "8d34bdc9a5c78c42",
+            "bus": "Bus A",
+            "accessToken": "3KMpqehqIfz7V4NT6xW7"
+        },
+        {
+            "aid": "2b039058a1a5f8a3",
+            "bus": "Bus B",
+            "accessToken": "wurH9PWz8Le2Lqcsu7tw"
+        },
+        {
+            "aid": "02372ba208415152",
+            "bus": "Bus C",
+            "accessToken": "ASxTwuAPMUGGdvlwLPX2"
+        },
+        {
+            "aid": "c517cb23b2ad8f97",
+            "bus": "Bus D",
+            "accessToken": "sm9TTAJ8vDn8x7d1NxrD"
+        }
+    ]
+}

@@ -24,6 +24,23 @@ handler.setLevel(logging.DEBUG)
 app.logger.addHandler(handler)
 app.logger.setLevel(logging.DEBUG)
 
+@app.route('/api/view-registration-guide', methods=['GET'])
+def view_registration_guide():
+    """Endpoint to view the registration guide PDF."""
+    pdf_directory = '/var/www/ota_update_server/pdf'
+    pdf_filename = 'how_to_register_device.pdf'
+
+    if os.path.exists(os.path.join(pdf_directory, pdf_filename)):
+        try:
+            return send_from_directory(pdf_directory, pdf_filename, as_attachment=False)
+        except Exception as e:
+            app.logger.error(f"Error while serving the PDF: {str(e)}")
+            return jsonify({"error": f"Error while serving the file: {str(e)}"}), 500
+    else:
+        app.logger.error(f"PDF file {pdf_filename} not found in directory {pdf_directory}.")
+        return jsonify({"error": "PDF file not found"}), 404
+
+
 def get_latest_apk_version():
     """Function to retrieve the latest APK version from the 'latest' directory."""
     latest_dir = os.path.join(app.static_folder, 'latest')
@@ -226,6 +243,9 @@ def upload_config():
         if not data:
             return jsonify({"error": "No JSON data provided"}), 400
 
+        # Log the received data
+        app.logger.debug(f"Received config upload: {json.dumps(data, indent=4)}")
+
         # Extract required fields
         company_name = data.get("companyName")
         password = data.get("password")
@@ -259,16 +279,21 @@ def upload_config():
 
 @app.route('/api/config-files', methods=['GET'])
 def get_config_files():
-    """Endpoint to get all config files from the config folder"""
+    """Fetch all config files."""
     config_folder = '/var/www/ota_update_server/config'
     config_files = []
 
     for filename in os.listdir(config_folder):
         if filename.endswith('.json'):
             with open(os.path.join(config_folder, filename), 'r') as file:
-                config_data = json.load(file)
-                config_files.append(config_data)
+                try:
+                    config_data = json.load(file)
+                    app.logger.debug(f"Loaded Config Data: {json.dumps(config_data, indent=4)}")
+                    config_files.append(config_data)
+                except json.JSONDecodeError as e:
+                    app.logger.error(f"Error decoding JSON in file {filename}: {e}")
 
+    app.logger.debug(f"Returning config files: {json.dumps(config_files, indent=4)}")
     return jsonify(config_files), 200
 
 @app.route('/api/download-route-generation-apk', methods=['GET'])
