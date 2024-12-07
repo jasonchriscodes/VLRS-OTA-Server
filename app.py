@@ -80,6 +80,25 @@ def update_version_info():
 # Ensure version info is updated on server startup
 version_info = update_version_info()
 
+@app.route('/api/download-launcher-apk', methods=['GET'])
+def download_launcher_apk():
+    """Endpoint to download the launcher APK from the 'launcher' folder."""
+    launcher_directory = '/var/www/ota_update_server/launcher'
+    launcher_filename = 'launcher.apk'
+
+    if os.path.exists(os.path.join(launcher_directory, launcher_filename)):
+        try:
+            response = send_from_directory(launcher_directory, launcher_filename, as_attachment=True)
+            response.headers["Content-Disposition"] = f"attachment; filename={launcher_filename}"
+            return response
+        except Exception as e:
+            app.logger.error(f"Error while serving the launcher APK: {str(e)}")
+            return jsonify({"error": f"Error while serving the file: {str(e)}"}), 500
+    else:
+        app.logger.error("launcher.apk not found.")
+        return jsonify({"error": "launcher.apk not found"}), 404
+
+
 @app.route('/api/latest-version', methods=['GET'])
 def get_latest_version():
     """Endpoint to get the latest version information."""
